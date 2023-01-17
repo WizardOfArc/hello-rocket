@@ -4,6 +4,8 @@ use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
 use serde::{Serialize};
 
+use reqwest;
+
 pub struct CORS;
 
 
@@ -54,6 +56,7 @@ fn get_progress_rate(label: String) -> ProgressRate {
 }
 
 
+// endpoint for rendering the home page
 #[get("/")]
 fn index() -> &'static str {
     "Hello Woyld!"
@@ -62,6 +65,18 @@ fn index() -> &'static str {
 #[get("/moo")]
 fn cow() -> &'static str {
     "What are you? a  COW?!"
+}
+
+#[get("/vajravai")]
+async fn call_api() -> String {
+   let req_future = reqwest::get("http://vajravai.com");
+   match req_future.await {
+       Result::Ok(f) => match f.text().await {
+           Result::Ok(s) => s,
+           Result::Err(_) => "Calling text() failed".to_string()
+       },
+       Result::Err(_) => "request had issues".to_string()
+   }
 }
 
 #[get("/meow/<word>")]
@@ -80,7 +95,7 @@ fn not_found(req: &Request) -> String {
 fn rocket() -> _ {
     rocket::build()
         .attach(CORS)
-        .mount("/", routes![index, cow, quote])
+        .mount("/", routes![index, cow, quote, call_api])
         .register("/", catchers![not_found])
 }
 
